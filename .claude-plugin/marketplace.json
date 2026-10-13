@@ -5,17 +5,17 @@
   },
   "metadata": {
     "description": "Model/effort tiering for Claude Code - /tier makes any project quality-first and cost-efficient with one durable rule, no hooks or moving parts.",
-    "version": "1.10.0"
+    "version": "1.11.0"
   },
   "plugins": [
     {
       "name": "tier",
       "description": "Install a model/effort-tiering working preference into the current project - quality-first, cost-efficient. /tier writes a machine-local CLAUDE.local.md by default (your repo stays clean); /tier repo writes the committed CLAUDE.md for web + mobile coverage.",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "source": {
         "source": "archive",
-        "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.10.0/tier-plugin-1.10.0.zip",
-        "sha256": "a5771cf95dd705d41037b180958f7f55cb3c1cd83da0e4d32aceeec45b022f6a"
+        "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.11.0/tier-plugin-1.11.0.zip",
+        "sha256": "fbc2556bdf5465982fb2eb123fd517c5d16a4c67122d7473a83768802a607d35"
       }
     }
   ]
