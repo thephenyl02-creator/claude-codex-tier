@@ -32,12 +32,12 @@ prettify, or reformat it.
 
 ## Steps
 0. **Global-coverage guard.** Before anything else, check the user-level
-   `~/.claude/CLAUDE.md` for the marker `model & effort tiering` and its
+   `~/.claude/CLAUDE.md` for the marker `model & effort tiering` (case-insensitive) and its
    `tier-rule vX.Y.Z` tag (skip this check in a cloud sandbox — no user home
    config there):
    - Global tag SAME or NEWER than this skill's canonical block, and LOCAL
      mode → the user is already covered in every local session; a project
-     install would load the same ~900-token rule TWICE every turn for zero
+     install would load the same ~1,100-token rule TWICE every turn for zero
      benefit. Say so and STOP. Mention that `/tier repo` is the one reason to
      install anyway (web/mobile sessions read only committed repo files).
    - Global tag OLDER than the canonical block → offer to upgrade the GLOBAL
@@ -74,7 +74,7 @@ prettify, or reformat it.
      step 3 ignore the other-file branches (there is only one file — upgrade
      in place there).
 3. Search BOTH targets (where they exist) for the marker
-   `model & effort tiering`, then take exactly one branch:
+   `model & effort tiering` (case-insensitive), then take exactly one branch:
    - **Found in BOTH files** → never finish with two copies. Local mode →
      ask the migrate/keep question below, and EITHER WAY delete the losing
      copy: migrate ⇒ the CANONICAL BLOCK replaces any existing block in
@@ -84,7 +84,7 @@ prettify, or reformat it.
      the CANONICAL BLOCK into `CLAUDE.md` (replacing its old block) and
      DELETE the block from `CLAUDE.local.md`.
    - **Found only in the file matching the chosen mode** → version check:
-     · block contains the tag `tier-rule v1.10.0` → already current. In local
+     · block contains the tag `tier-rule v1.11.0` → already current. In local
        mode in a git repo, still run step 4 first (verify/repair the
        exclusion — it may be missing even when the block is current), then
        say the project is already tiered and STOP — do not duplicate.
@@ -139,78 +139,30 @@ auto-upgrade breaks.
 
 ```markdown
 ## Working preferences — model & effort tiering
-<!-- tier-rule v1.10.0 -->
+<!-- tier-rule v1.11.0 -->
 
-Quality first. Efficiency comes ONLY from routing mechanical work to cheaper
-tiers — never from downgrading work that needs a strong model.
-**HARD RULE: any doubt whether a downgrade would hurt → do NOT downgrade.**
+OBJECTIVE: quality first (never downgrade work that needs a strong model) > fewest tokens that deliver it. Every dispatch = cost decision {who reads, who judges, how many, model, effort}. No routing table: derive from FACTS. Small task (1 tool call + 1 reply) => skip routing.
 
-**Routing** (a lookup, never a deliberation; small task → skip it, use the
-current model):
-· tests / builds / linters / migrations → local, no model
-· mechanical gathering, search fan-out, doc refresh → Sonnet (low/medium)
-· the SAME simple operation repeated over many items → Haiku (200K window;
-  Claude Code sends NO effort for Haiku sub-agents — treat the dial as absent).
-  A one-off check is cheaper inline — see the boot floor
-· substantive builds, synthesis, final judgment, verification / correctness
-  review → Opus, LOW effort by default (measured: held full quality where
-  Sonnet did not at low, medium OR high; verification Opus/low 4/4 vs
-  Sonnet/low 3/4; xhigh only for demanding agentic work) — the default top
-  tier since Opus 5
-· Fable 5.1 = escalation ONLY: the longest/hardest frontier reasoning,
-  high-stakes research, tie-break after an Opus attempt fails, or explicit
-  request. List output price is 2× Opus; measured TOTAL cost 1–2× Opus/low by
-  task, with no quality edge on any shape measured. Unavailable? Opus at max
-  IS the ceiling — never stall on it.
-· Never `max` by default — measured 2-5× the cost of `low` for no CORRECTNESS
-  gain (it bought only a tighter summary); reserve it for problems that
-  demonstrably failed at xhigh.
-· **Within a tier, always the NEWEST model** — same or lower price, better
-  model (today: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5). Older versions cost
-  the same or more for less; Opus/Sonnet 4.6 also lack `xhigh`. Pin by FULL
-  ID where a short alias lags — `fable` still resolves to Fable 5, which has
-  4× dearer cache reads than 5.1 for the same price.
+FACTS (list prices 2026-10-06; runtime facts verified in Claude Code 2026-10-12):
+- $/MTok in/out/cache_write/cache_read on the 1h cache: fable5.1 10/50/20/0.25 | opus5.5 4/20/8/0.2 | sonnet5.5 2/10/4/0.2 | haiku5.5 0.1/0.5/0.2/0.01 (prompt <= 100K; 5x above). Always newest model in tier. Aliases opus/sonnet/haiku -> 5.5, fable -> 5.1; pin a full ID only when an alias lags.
+- cost/turn ∝ context: every response re-reads its whole context (base AND each agent, every tool call). write = 20-80x read (sonnet/haiku 20x, opus5.5 40x, fable5.1 80x). FULL rebuild on: idle > 1h | any model/effort change (measured 20x the turn on opus5; 40x by opus5.5 prices). Thrashing ≈ 2x list.
+- agent boot ~9K with listed tools (same on haiku/sonnet/opus 5.5), x3 with `tools: *` => small one-shot work stays inline. Delegate iff work clears the boot AND (tier drops OR material would sit in the base context). Unpinned agent = session model. Batched fan-out shares the first prefix.
+- quality (125 graded runs on opus5/sonnet5/haiku4.5/fable5.1; not re-run on 5.5): model = strong lever, effort = weak. opus/low held the ambiguous edge case sonnet failed at low/med/high; precise specs: every tier passed; low degrades on ambiguity, not difficulty. effort: cost 1.3-1.6x, correctness rarely. max: 2-5x low, no correctness gain. fable5.1: no quality edge, 1-2x opus5/low cost; verification opus/low = fable/low (4/4), sonnet/low 3/4. => DEFAULT for substantive work (build, synthesis, verification, judgment) = opus/low; mechanical or precisely specified = sonnet; xhigh only for demanding agentic work.
+- 5.5 effort (vendor): level names don't map 1:1 from 5.0. opus5.5 thinks more per turn at a level but needs fewer turns (its medium >= opus5 high). sonnet5.5 recalibrated: medium for agentic edits/multistep tools, low for reading/search/extraction (low may skip verifying). haiku5.5: 10x cheaper per token than haiku4.5 (~8x per text), unmeasured as a bulk reader => keeps one extraction over many items; sonnet stays the reader until measured.
+- mechanics: `Agent` tool has no effort param (pin in agent frontmatter | Workflow call); effort is honored on every 5.5 agent incl. haiku; assistant cannot change the session model (`/model` user-only); usage chart = main sessions only (measured 2026-09-02) => delegated spend visible only in transcripts (tier-mirror.py).
 
-**Main session — model AND effort are frozen at session start**
-- The cache is keyed by both. Measured: changing either drops cache_read to
-  ZERO, and the next identical turn costs 20× more. Pick both at the start
-  and hold them; vary them ACROSS sessions, never within one. Switch
-  mid-session only if the whole REST of the session needs it.
-- Thrashing is worse than losing a discount: a cache WRITE costs ~20× a READ
-  for the same tokens, so a session that keeps invalidating pays roughly
-  DOUBLE list price.
-- **Model fit:** DOWNGRADE clearly-mechanical work to a cheaper sub-agent
-  directly, no permission needed. UPGRADE only after informing/asking —
-  never silently deliver a weaker result.
+CONSTRAINTS (hard):
+- doubt a downgrade could hurt => do not downgrade. mechanical => downgrade without asking; upgrade only after saying so.
+- session model + effort frozen at start; vary across sessions, never within one.
+- pin every sub-agent (model + effort). rate-limited => retry THAT agent on another tier, never unpin globally. weak result | reply starts `ESCALATE:` => rerun one tier up.
+- never `max` by default. fable5.1 = escalation only, low effort; unavailable (e.g. plan needs usage credits) => opus/max is the ceiling; never stall.
+- fan-out >= 3 => announce one line first ("6 x sonnet/low"). give each agent the decision explicitly.
 
-**Sub-agents — the only tier lever once a session is running**
-- A sub-agent runs at its own model and effort in its own context, costing
-  the main cache nothing — but it pays to BOOT first: ~10K on Haiku, ~44K on
-  Opus (≈$0.28 before any work happens). Boot tracks the MODEL and whether the
-  agent takes `tools: *` (every MCP schema — measured 3× the boot), not which
-  built-ins it lists. So small one-shot work is cheaper INLINE, however cheap
-  the model.
-- Delegate when the work is big enough to clear that boot AND either the tier
-  drops meaningfully or the material would otherwise sit in the main context
-  being re-read every later turn. A real tier drop can make delegation net
-  CHEAPER than inline; same-tier delegation buys only the context benefit.
-- **PIN EVERY SUB-AGENT.** An unpinned agent inherits the session model, so a
-  frontier main model turns mechanical work into frontier-priced work with no
-  visible signal. Rate-limited? Retry THAT agent on another tier — never drop
-  pins globally. Weak or wrong result, or a reply starting `ESCALATE:`? Re-run THAT agent one
-  tier UP: a bad cheap answer costs more than the right tier would have.
-- The `Agent` tool has **no effort parameter**. Pin effort in the agent's
-  `.claude/agents/*.md` frontmatter (model, effort, tools), or via
-  `Workflow`'s `agent(prompt, {model, effort})`.
-- **Batch by configuration.** Dispatch INDEPENDENT same-tier agents in ONE
-  parallel batch — a fan-out shares the prefix the first agent cached (~39%
-  less boot). Never parallelise steps that depend on each other.
-- Announce any fan-out of 3+ in one line first ("6 × Sonnet/medium") so a
-  mis-route is visible BEFORE the tokens are spent.
-- Give a sub-agent the DECISION explicitly — it did not watch it being made.
+ORCHESTRATOR = the base: plans, decides, dispatches, judges, writes the final word; keeps plans/decisions in files (context = size of the task); locates material (grep, line ranges) but never reads bulk into its own context, edits at scale, or verifies raw sources itself.
+- cheap reads, strong judges: sonnet (haiku for one extraction over many items) => digest {findings, quotes, paths}; opus/fable judges the digest, opens a source only on doubt. never bulk to a strong agent.
+- each agent: gets paths + line ranges (not files); returns a bounded digest (not a dump); finishes in a few turns.
+- one verifier per finding. add readers only on a named signal: sources disagree | load-bearing claim single-sourced | high-stakes conclusion.
+- tool can prove it => no model (tests, builds, linters, exact checks run locally).
 
-**If the session model changes on its own** (usage limits, provider fallback —
-unpredictable, and `/model` is user-only so the assistant cannot restore it):
-announce it, pause judgment-heavy work, ask the user to restore, then
-re-verify anything quality-critical decided during that window.
+SESSION MODEL CHANGES ON ITS OWN (limits, fallback) => announce; pause judgment-heavy work; ask the user to restore; re-verify quality-critical decisions from that window.
 ```

@@ -6,8 +6,9 @@ effort: high
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, ToolSearch
 ---
 
-Note: if your plan has no Fable, delete this file or set model to opus.
-The rule treats Opus at max as the ceiling in that case.
+Note: if your plan has no Fable (or Fable needs usage credits you have not
+enabled), delete this file or set model to opus. The rule treats Opus at max
+as the ceiling in that case.
 
 You are the escalation of last resort. You cost roughly twice an Opus agent,
 so you are only worth calling when Opus has already been tried and fell short.

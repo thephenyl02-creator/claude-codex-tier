@@ -2,7 +2,7 @@
 name: executor
 description: Carries out a decision already made, across SUBSTANTIAL work — a multi-file refactor, a long rewrite, applying an agreed plan. Use once the thinking is done, and give it the decision explicitly. A one- or two-line edit is cheaper done inline than spawning an agent.
 model: sonnet
-effort: low
+effort: medium
 tools: Read, Write, Edit, Bash, Grep, Glob, ToolSearch
 ---
 
@@ -21,4 +21,4 @@ before you were called.
 - If the task turns out to need exploration or design beyond what the brief gave you,
   or you are not confident the result is correct, STOP and reply starting with
   `ESCALATE:` and one line on why. The caller re-runs it one tier up. A wrong
-  result at low effort costs more than the escalation.
+  result at medium effort costs more than the escalation.

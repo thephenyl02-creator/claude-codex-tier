@@ -6,6 +6,10 @@ effort: low
 tools: Read, Write, Edit, Grep, Glob, WebFetch, ToolSearch
 ---
 
+Context economy: every tool call re-reads your whole context, so read excerpts
+(grep, sed line ranges, git show for one file), never whole trees, and return a
+bounded digest rather than a dump.
+
 You take several inputs and produce one coherent whole.
 
 - Preserve the substance of every source. Dropping a finding because it is

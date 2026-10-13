@@ -2,6 +2,32 @@
 
 Each entry is an installable GitHub release of the `tier` plugin. Development between releases lives in the commit log. The rule block tag (`tier-rule vX.Y.Z`) and the release version are independent: a docs-only release does not bump the tag.
 
+- **1.11.0** - The 5.5 models, and a rule written for the model to read.
+  Prices and pins move to the current generation: Opus 5.5 ($4/$20, cache
+  reads $0.20 - 20% below Opus 5, 60% below on reads), Sonnet 5.5 (same
+  price as Sonnet 5) and Haiku 5.5 ($0.10/$0.50 up to a 100K-token prompt,
+  five times that above it - 10x below Haiku 4.5 per token, about 8x for
+  the same text since its tokenizer counts ~30% more). Fable 5.1 stays the
+  escalation. Checked in Claude Code on 2026-10-12: the `opus`, `sonnet` and
+  `haiku` aliases resolve to the 5.5 models and `fable` to 5.1, so the
+  reference agents keep their aliases; effort is now honored on Haiku
+  sub-agents; and a sub-agent with a listed toolset boots at ~9K tokens on
+  all three 5.5 models, retiring the old ~44K Opus figure. Sonnet 5.5's
+  effort levels are recalibrated, so the executor moves from low to medium -
+  the vendor's starting point for agentic edits, and the quality-first
+  choice under doubt. The quality findings were measured on the 5.0
+  generation and the rule now says so; nothing was re-run on 5.5, and Haiku
+  5.5 keeps its role until it is measured as a reader. The rule itself is
+  rewritten from a prose routing table into terse facts and hard
+  constraints (~1,060 tokens) from which the model derives each route. A
+  three-day local trial of that form moved neither cost nor which models do
+  the reading by a measurable amount - strong-agent context per turn fell
+  about 40% on mid-size agents, unevenly across projects - so this release
+  claims no efficiency gain for it. Also: the three strong reference agents
+  gain the context-economy paragraph, `tier-mirror.py` (per-model spend
+  from local transcripts, zero model tokens) ships in the plugin, and
+  `/tier` matches its marker case-insensitively.
+
 - **1.10.0** - The measured rule, audited. Four sweep rounds (125 graded
   agent runs over eight task shapes, every grader validated against a
   baseline and a reference first) settled model-versus-effort: **model is the
