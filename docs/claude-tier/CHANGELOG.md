@@ -2,6 +2,35 @@
 
 Each entry is an installable GitHub release of the `tier` plugin. Development between releases lives in the commit log. The rule block tag (`tier-rule vX.Y.Z`) and the release version are independent: a docs-only release does not bump the tag.
 
+- **1.11.1** - The 5.5 re-measure, four stale facts, and honest prices.
+  The routes are now measured on the 5.5 models: 429 graded runs, 3 models
+  x 5 efforts on a tool-checked build, a silent bug hunt with decoys and a
+  silent synthesis with traps, at least 5 runs per setting. Opus was perfect
+  at every effort; Sonnet missed once each at low and medium on the bug
+  hunt and was clean from high; Haiku at low passed the tool-checked build
+  59/59 but missed on silent work (bug hunt 57/59, synthesis 4/10), and
+  Haiku at medium was 15/15 (23/24 counting an easier synthesis). So the defaults become: tool-checked work to
+  Haiku at low, reviewable cited extraction to Haiku at medium (inferred, not yet
+  measured on cited extraction), silent work
+  fully determined by its input to Sonnet at high, judgment and ambiguity
+  to Opus at low - and a new hard constraint puts Haiku only where its
+  mistakes get seen. Effort cost against low on Sonnet and Opus: high 1.0-1.6x,
+  xhigh 1.1-2x, max 2-9x, with no quality gain unless the model was at its limit.
+  An earlier cost script counted each reply once per content block and
+  roughly doubled every figure (more at high effort); the numbers above are
+  corrected and were re-derived by two independent checks. Four runtime
+  facts in 1.11.0 had gone stale and are fixed: an effort change keeps the
+  cache on the 5.5 models and Fable 5.1; the `Agent` tool takes an effort
+  per call, and per-call model and effort override an agent file;
+  `CLAUDE_CODE_SUBAGENT_MODEL` sets the default for unpinned sub-agents;
+  `/usage` shows the sub-agent share. Fable's "low effort" qualifier is
+  dropped (on 5.0, Fable at low missed an ambiguous build that Fable at
+  high passed; the adjudicator runs at high). Boot re-measured: ~10K tokens with
+  a listed toolset against ~55K with every tool. `tier-mirror.py` now prices
+  cache writes from the usage's TTL split (sub-agents write at the 5-minute
+  rate, 1.25x input, not 2x) and keeps the largest output count per reply:
+  2026-10-23 drops from $58.51 to $51.23. Block tag `tier-rule v1.11.1`;
+  `/tier` upgrades older installs in place.
 - **1.11.0** - The 5.5 models, and a rule written for the model to read.
   Prices and pins move to the current generation: Opus 5.5 ($4/$20, cache
   reads $0.20 - 20% below Opus 5, 60% below on reads), Sonnet 5.5 (same

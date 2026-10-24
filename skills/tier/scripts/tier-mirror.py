@@ -5,9 +5,12 @@ Usage:  python <skill dir>/scripts/tier-mirror.py [--day YYYY-MM-DD|today|yester
 
 Default is today (local time). Reads every project under ~/.claude/projects: main sessions and
 their sub-agents (nested transcript files). One row per API response. A response is stored as
-several records (one per content block) whose usage accumulates, so the LAST record per message
-id is taken. Dollar figures are the API list-price equivalent from the rule's price table, for
-relative comparison only; how the subscription weights usage is not public.
+several records (one per content block), each repeating the response's usage, so one row per
+message id is kept; its output count is the largest seen, because some records carry a stale one.
+Cache writes are priced by TTL from the usage's own split: 5-minute writes at 1.25x input, 1-hour
+writes at 2x. Without a split, main sessions count as 1-hour (a subscription's main conversation)
+and sub-agents as 5-minute. Dollar figures are the API list-price equivalent from the rule's price
+table, for relative comparison only; how the subscription weights usage is not public.
 """
 import argparse
 import collections
@@ -20,7 +23,7 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = os.path.join(os.path.expanduser("~"), ".claude", "projects")
 PRICE = {  # in, out, cache write, cache read ($ per MTok, list)
-    # cache write = 2x input on the 1-hour cache this setup uses (1.25x is the 5-minute rate)
+    # cache write = the 1-hour rate, 2x input; 5-minute writes are priced at 1.25x input in cost()
     "claude-fable-5-1": (10, 50, 20, 0.25),
     "claude-opus-5-5": (4, 20, 8, 0.2),
     "claude-sonnet-5-5": (2, 10, 4, 0.2),
@@ -39,11 +42,17 @@ READ_TOOLS = {"Read", "Grep", "Glob", "WebFetch", "WebSearch", "ToolSearch"}
 BASH_READ = ("cat ", "sed -n", "grep", "head ", "tail ", "ls ", "git show", "git diff", "git log", "find ", "wc ", "rg ", "python -c")
 
 
+def write_cost(p, c):
+    """Cache-write dollars: the 5-minute part at 1.25x input, the rest at the 1-hour rate."""
+    cw5 = c.get("cw5", 0)
+    return (cw5 * p[0] * 1.25 + (c["cw"] - cw5) * p[2]) / 1e6
+
+
 def cost(model, c):
     p = PRICE.get(model)
     if not p:
         return None
-    return (c["in"] * p[0] + c["out"] * p[1] + c["cw"] * p[2] + c["cr"] * p[3]) / 1e6
+    return (c["in"] * p[0] + c["out"] * p[1] + c["cr"] * p[3]) / 1e6 + write_cost(p, c)
 
 
 def parse_ts(s):
@@ -103,10 +112,18 @@ def scan(day=None, session=None):
                                  + u.get("cache_read_input_tokens", 0))
                 if model in LONG_PROMPT and prompt_tokens > 100_000:
                     model = LONG_PROMPT[model]
+                cw = u.get("cache_creation_input_tokens") or 0
+                split = u.get("cache_creation")
+                if isinstance(split, dict):
+                    cw5 = min(split.get("ephemeral_5m_input_tokens") or 0, cw)
+                else:
+                    cw5 = cw if who == "sub" else 0
+                prev = last.get(key)
                 last[key] = {
                     "model": model, "ts": ts,
-                    "in": u.get("input_tokens", 0), "out": u.get("output_tokens", 0),
-                    "cw": u.get("cache_creation_input_tokens", 0), "cr": u.get("cache_read_input_tokens", 0),
+                    "in": u.get("input_tokens") or 0,
+                    "out": max(u.get("output_tokens") or 0, prev["out"] if prev else 0),
+                    "cw": cw, "cw5": cw5, "cr": u.get("cache_read_input_tokens") or 0,
                 }
                 for b in msg.get("content") or []:
                     if isinstance(b, dict) and b.get("type") == "tool_use":
@@ -166,7 +183,7 @@ def main():
         models = collections.Counter()
         for r in s["responses"]:
             models[r["model"]] += 1
-            for k in ("in", "out", "cw", "cr"):
+            for k in ("in", "out", "cw", "cw5", "cr"):
                 by[(s["who"], r["model"])][k] += r[k]
                 c[k] += r[k]
             by[(s["who"], r["model"])]["n"] += 1
@@ -200,7 +217,7 @@ def main():
         p = PRICE.get(m)
         if p:
             split["out"] += c["out"] * p[1] / 1e6
-            split["cw"] += c["cw"] * p[2] / 1e6
+            split["cw"] += write_cost(p, c)
             split["cr"] += c["cr"] * p[3] / 1e6
     strong = [r for r in agents if "opus" in r["model"] or "fable" in r["model"]]
     strong_reads = [r["read_share"] for r in strong if r["read_share"] is not None]

@@ -16,24 +16,28 @@ clear rule into the file Claude Code always reads, and gets out of the way.
 ## What the rule does
 
 - **Plan and judge on the session's model; execute through pinned
-  sub-agents.** The main session's model and effort are frozen at start
-  (the prompt cache is keyed by both - switching either mid-session measured
-  20x the cost of the same turn), so sub-agents are the only tier lever.
+  sub-agents.** The main session's model is frozen at start (the prompt
+  cache is keyed by it - switching mid-session measured 20x the cost of the
+  same turn; on the 5.5 models and Fable 5.1 an effort change keeps the
+  cache), so sub-agents are the tier lever.
 - **Derives each route from measured facts, not a table:** tests, builds
-  and linters run with no model; reading and search go to Sonnet, one
-  extraction over many items to Haiku, and the strong model judges their
-  digest; substantive builds, synthesis, verification and final judgment
-  default to **Opus at low effort** - measured to hold full quality where
-  Sonnet did not at any effort (measured on Opus 5 and Sonnet 5; the 5.5
-  models inherit the routes until they are re-measured).
-- **Model is the strong lever, effort the weak one.** Effort spread within a
-  model measured 1.3-1.6x in cost; model spread 2-5x. Low is the default on
-  Opus; Sonnet 5.5's recalibrated levels put agentic edits at medium. `max`
-  is never a default (2-5x the cost of low for no correctness gain).
+  and linters run with no model; work a tool will check goes to Haiku at
+  low effort; reading and extraction whose cited items a strong model
+  spot-checks go to Haiku at medium (inferred from its measured runs); silent work fully determined by its
+  input goes to Sonnet at high; judgment, ambiguous specs, verification and
+  design default to **Opus at low effort**. Haiku only goes where its
+  mistakes get seen. Re-measured on the 5.5 models (429 graded runs,
+  2026-10-24); Opus's edge on ambiguous specs was measured on the 5.0
+  generation.
+- **Model is the strong lever, effort the weak one.** On the 5.5 models,
+  high effort cost Sonnet and Opus 1.0-1.6x low and xhigh 1.1-2x; more effort raised
+  quality only where the model was at its limit (Haiku at low on silent
+  work). Sonnet 5.5's recalibrated levels put agentic edits at medium.
+  `max` is never a default (2-9x the cost of low for no measured gain).
 - **Fable 5.1 is an escalation, not a default:** the hardest frontier
   reasoning, high-stakes research, a tie-break after an Opus attempt fails,
-  or an explicit request. Measured total cost ran 1-2x Opus 5 at low by task
-  with no quality edge on any shape measured (Opus 5.5 is cheaper still).
+  or an explicit request. Measured total cost ran 1.4-1.7x Opus 5 at low by
+  task with no quality edge on any shape measured (Opus 5.5 is cheaper still).
   Without Fable on the plan, or without the usage credits it may need, Opus
   at max is the ceiling - the rule never stalls on an unavailable model.
 - **Newest model within a tier, always** - same or lower price, better model.
@@ -199,10 +203,12 @@ Other routers auto-switch your model mid-session via hooks, or ship complex
 config profiles. This one deliberately does neither, and there is now a
 measurement behind that rather than a preference.
 
-The prompt cache is keyed by model AND effort. Switching either mid-session
-drops `cache_read` to zero and forces a full rebuild - measured at **20x the
-cost of the identical turn** ($0.017 -> $0.346), with a control turn confirming
-the cache returned as soon as the setting was held steady. An auto-switching
+The prompt cache is keyed by model. Switching it mid-session drops
+`cache_read` to zero and forces a full rebuild - measured at **20x the
+cost of the identical turn** ($0.017 -> $0.346, on Opus 5, when effort was
+also part of the key), with a control turn confirming the cache returned as
+soon as the setting was held steady. On the 5.5 models and Fable 5.1 an
+effort change now keeps the cache (API key or subscription). An auto-switching
 router pays that toll every time it fires. Worse, a cache write costs 20-80x
 a cache read for the same tokens (40x on Opus 5.5), so a session that keeps
 invalidating pays roughly double list price - not merely losing a discount.
@@ -217,8 +223,10 @@ tiering, and never trades quality for cost.
 and prints, per model, main-session and sub-agent usage separately: cache
 reads and writes, a list-price equivalent, and each agent's context per turn
 and share of tool calls spent reading. It spends no model tokens. Claude
-Code's usage chart counts main sessions only, so this is the one place
-delegated spend shows up.
+Code's `/usage` shows the sub-agent share as a percentage; this breaks it
+down per model and per agent. Cache writes are priced from the usage's own
+TTL split: 5-minute writes (every sub-agent) at 1.25x input, 1-hour writes
+(a subscription's main conversation) at 2x.
 
 ```bash
 python <skill dir>/scripts/tier-mirror.py --day today
@@ -226,9 +234,11 @@ python <skill dir>/scripts/tier-mirror.py --day today
 
 ### One dependency worth knowing
 
-The rule tells you to pin a sub-agent's effort in `.claude/agents/*.md`
-frontmatter, because the `Agent` tool exposes no effort parameter. **`/tier`
-does not create agent files** - that part is yours.
+The `Agent` tool takes a model and an effort on every call, and those
+override an agent file's pins, so agent files are optional. They still pay
+for themselves one way: an agent with a listed toolset starts about 5x
+smaller than one with every tool (see boot cost below). **`/tier` does not
+create agent files** - that part is yours.
 
 The seven agents used to measure the rule are published under
 [docs/claude-tier/agents/](agents/), one file each:
@@ -274,10 +284,12 @@ back.
 The measurements behind the pins, including why verification and integration
 sit on Opus at low effort and why Fable stays escalation-only, are in the
 [1.10.0 changelog entry](CHANGELOG.md); the 1.11.0 entry records what moved
-when the pins went to the 5.5 models.
+when the pins went to the 5.5 models, and 1.11.1 the 5.5 re-measure.
 
 Boot cost is worth knowing before you write these: a sub-agent pays roughly
-9K tokens to start with a listed toolset, on any 5.5 model, flat regardless of task size,
+10K tokens to start with a listed toolset, on any 5.5 model, flat regardless of task size,
 so small one-shot work is cheaper done inline however cheap the model. List
-the tools you need rather than `*`: the wildcard loads every MCP schema and
-measured 3x the boot on the same model.
+the tools you need rather than `*`: a generic agent with every tool started
+at ~55K tokens on the measuring machine (2026-10-24), about 5x - the
+wildcard loads every tool schema, so it grows with the MCP servers you have
+connected.
