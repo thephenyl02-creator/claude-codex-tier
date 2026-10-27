@@ -5,17 +5,27 @@
   },
   "metadata": {
     "description": "Model/effort tiering for Claude Code - /tier makes any project quality-first and cost-efficient with one durable rule, no hooks or moving parts.",
-    "version": "1.11.1"
+    "version": "1.12.0"
   },
   "plugins": [
     {
       "name": "tier",
       "description": "Install a model/effort-tiering working preference into the current project - quality-first, cost-efficient. /tier writes a machine-local CLAUDE.local.md by default (your repo stays clean); /tier repo writes the committed CLAUDE.md for web + mobile coverage.",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "source": {
         "source": "archive",
-        "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.11.1/tier-plugin-1.11.1.zip",
-        "sha256": "632212f3192c54d0f450259544b4165871498d0eae3df999b2b04d39a6d025a8"
+        "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.12.0/tier-plugin-1.12.0.zip",
+        "sha256": "ce16319f86c4a6e343d240e2085d97fbe35b99dfabfafe9a74ad1b804dc74d62"
+      }
+    },
+    {
+      "name": "tier-mod",
+      "description": "Tier: the main session manages, helpers do the work. Every hand-off names a model and an effort (max/Fable only after an opus/xhigh failure of that task); web work, big reads and multi-file edits go to tier-mod:reader / tier-mod:editor; a ledger records what each hand-off cost, its check's exit code, and what it saved.",
+      "version": "0.20.0",
+      "source": {
+        "source": "archive",
+        "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.12.0/tier-mod-0.20.0.zip",
+        "sha256": "21df49dd1ab5e1a741a056ee340bc587398f665bf05aa6e04f0cb526aec0c0e1"
       }
     }
   ]
