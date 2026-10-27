@@ -1,0 +1,45 @@
+{
+  "name": "tier-mod",
+  "version": "0.20.0",
+  "description": "Tier: the main session manages, helpers do the work. Every hand-off names a model and an effort (max/Fable only after an opus/xhigh failure of that task); web work, big reads and multi-file edits go to tier-mod:reader / tier-mod:editor; a ledger records what each hand-off cost, its check's exit code, and what it saved.",
+  "author": {
+    "name": "Fenil K Ventures LLC"
+  },
+  "homepage": "https://github.com/thephenyl02-creator/claude-codex-tier",
+  "repository": "https://github.com/thephenyl02-creator/claude-codex-tier",
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "enforce": {
+      "type": "boolean",
+      "title": "Enforce",
+      "description": "Default of the on/off switch: on refuses what the gates catch; off records only. The pane's switch overrides it per user.",
+      "default": true
+    },
+    "readTokens": {
+      "type": "number",
+      "title": "Reading allowance (tokens per message)",
+      "description": "Tokens of tool output the main session may read per user message before results are handed off.",
+      "default": 8000
+    },
+    "readLines": {
+      "type": "number",
+      "title": "Whole-file read limit (lines)",
+      "description": "A Read with no offset/limit of a file longer than this is refused.",
+      "default": 300
+    },
+    "editFiles": {
+      "type": "number",
+      "title": "Files edited per message",
+      "description": "Distinct files the main session may edit per user message.",
+      "default": 2
+    },
+    "facts": {
+      "type": "string",
+      "title": "Facts in the system prompt",
+      "description": "auto adds the Tier note to the system prompt (and the full rule when no CLAUDE.md carries it); off adds nothing.",
+      "default": "auto",
+      "options": ["auto", "off"]
+    }
+  }
+}

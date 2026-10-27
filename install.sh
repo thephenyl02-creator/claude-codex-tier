@@ -21,6 +21,12 @@ MARKETPLACE="claude-tier"
 # and caches the manifest over HTTPS, and `marketplace update` re-fetches it).
 MARKETPLACE_URL="https://raw.githubusercontent.com/$REPO/main/.claude-plugin/marketplace.json"
 PLUGIN="tier"
+# The Tier mod (enforcement + footer button / strip / pane), from the same
+# marketplace. Optional: a failure here is a warning, never an install failure.
+MOD_PLUGIN="tier-mod"
+# The mod is built against this Claude Code release (no lower bound is
+# documented by the plugin API, so older CLIs are skipped rather than risked).
+MOD_MIN_CLAUDE="2.1.308"
 TARBALL_URL="https://github.com/$REPO/archive/refs/heads/main.tar.gz"
 # Marks a skills-dir copy as written by this installer, so a later successful
 # plugin install may safely replace it (and never a hand-authored skill).
@@ -147,8 +153,46 @@ plugin_route() {
   [ "$INSTALL_OK" -eq 1 ] || [ "$UPDATE_OK" -eq 1 ]
 }
 
+# Prints 0 when $1 >= $2 (dotted numeric versions), 1 otherwise.
+version_ge() {
+  _a="$1"; _b="$2"
+  for _i in 1 2 3; do
+    _x="$(printf '%s' "$_a" | cut -d. -f"$_i")"; _y="$(printf '%s' "$_b" | cut -d. -f"$_i")"
+    _x="${_x:-0}"; _y="${_y:-0}"
+    if [ "$_x" -gt "$_y" ] 2>/dev/null; then return 0; fi
+    if [ "$_x" -lt "$_y" ] 2>/dev/null; then return 1; fi
+  done
+  return 0
+}
+
+# Optional second plugin. Never exits, never touches the skill fallback; every
+# outcome is a message. Sets MOD_STATE=installed|skipped|failed.
+MOD_STATE="skipped"
+install_mod() {
+  CC_VER="$("$CLAUDE_BIN" --version </dev/null 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
+  if [ -n "$CC_VER" ] && ! version_ge "$CC_VER" "$MOD_MIN_CLAUDE"; then
+    warn "Skipping the Tier mod: it needs Claude Code $MOD_MIN_CLAUDE or newer (you have $CC_VER)."
+    warn "Update Claude Code, then run:  claude plugin install $MOD_PLUGIN@$MARKETPLACE"
+    return 0
+  fi
+  M_OK=0
+  "$CLAUDE_BIN" plugin install "$MOD_PLUGIN@$MARKETPLACE" >/dev/null 2>&1 </dev/null && M_OK=1
+  "$CLAUDE_BIN" plugin update "$MOD_PLUGIN@$MARKETPLACE" >/dev/null 2>&1 </dev/null && M_OK=1
+  if [ "$M_OK" -eq 1 ]; then
+    MOD_STATE="installed"
+    ok "Plugin installed: $MOD_PLUGIN@$MARKETPLACE (enforcement + footer button)"
+  else
+    MOD_STATE="failed"
+    warn "Could not install the Tier mod ($MOD_PLUGIN@$MARKETPLACE). The tier skill works without it."
+    warn "To add it later, run:  claude plugin install $MOD_PLUGIN@$MARKETPLACE"
+  fi
+  return 0
+}
+
+PLUGIN_OK=0
 info "Installing the tier plugin..."
 if plugin_route; then
+  PLUGIN_OK=1
   ok "Plugin installed: $PLUGIN@$MARKETPLACE"
   # A previous run may have used the fallback; the plugin copy supersedes it.
   # Only remove a copy carrying our marker - never a hand-authored skill.
@@ -170,6 +214,7 @@ if plugin_route; then
 elif "$CLAUDE_BIN" plugin list </dev/null 2>/dev/null | grep -A3 -F "$PLUGIN@$MARKETPLACE" | grep -q 'enabled'; then
   # The route failed transiently, but a working plugin install already
   # exists - do not shadow it with a frozen skills-dir copy.
+  PLUGIN_OK=1
   warn "Plugin route failed, but $PLUGIN@$MARKETPLACE is already installed - keeping it and skipping the fallback copy."
 else
   # ---- 5. Fallback: direct skill copy, no git involved at all ---------------
@@ -233,5 +278,16 @@ else
   fi
 fi
 
+if [ "$PLUGIN_OK" -eq 1 ]; then
+  info "Installing the tier-mod plugin (optional)..."
+  install_mod || true
+else
+  warn "Skipping the Tier mod (the plugin route failed). Once it works, run:  claude plugin install $MOD_PLUGIN@$MARKETPLACE"
+fi
+
 printf '\n'
-ok "Done! Restart Claude Code (or start a new session), then run:  /tier"
+if [ "$MOD_STATE" = "installed" ]; then
+  ok "Done! Restart Claude Code, then run /tier in a project. The Tier button appears in the footer."
+else
+  ok "Done! Restart Claude Code (or start a new session), then run /tier in a project."
+fi

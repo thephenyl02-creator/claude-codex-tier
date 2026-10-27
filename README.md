@@ -9,21 +9,35 @@ changelog, and installers.
 | | Claude Tier | Codex Tier |
 | --- | --- | --- |
 | Runs in | Claude Code | Codex |
-| What it does | Installs one durable model/effort-tiering rule into a project | Routes each work unit to a tool, the current session, or a pinned model x reasoning-effort worker, then verifies |
+| What it does | A rule that routes each piece of work to a pinned model and effort, plus an optional mod that enforces it and shows the cost | Routes each work unit to a tool, the current session, or a pinned model x reasoning-effort worker, then verifies |
 | Invoke | `/tier` | `$codex-tier` |
 | Guide | [docs/claude-tier](docs/claude-tier/README.md) | [docs/codex-tier](docs/codex-tier/README.md) |
 | Changelog | [CHANGELOG](docs/claude-tier/CHANGELOG.md) | [CHANGELOG](docs/codex-tier/CHANGELOG.md) |
 
 Installable versions are on the [releases page](https://github.com/thephenyl02-creator/claude-codex-tier/releases).
-Each product owns its own directories: Claude Tier in `skills/tier/` and
-`docs/claude-tier/`; Codex Tier in `plugins/codex-tier/`, `docs/codex-tier/`,
+Each product owns its own directories: Claude Tier in `skills/tier/`,
+`plugins/tier-mod/` and `docs/claude-tier/`; Codex Tier in `plugins/codex-tier/`, `docs/codex-tier/`,
 `tests/codex-tier/`, and `benchmarks/codex-tier-e2e/`. The four `install*`
 scripts at the root are the installers.
 
 ## Claude Tier
 
-One command installs Claude Code if it is missing, adds the plugin, and falls
-back to a plain skill copy when the plugin route is blocked. Safe to re-run.
+<p align="center">
+  <img src="docs/claude-tier/images/banner.png" alt="Claude Tier" width="800">
+</p>
+
+Claude Tier keeps the expensive model for planning and judging, and sends
+the rest of the work to helpers on the cheapest model that still does it
+right. It has two parts. The `tier` plugin writes one rule into your
+project, and the model reads it every turn. The optional Tier mod makes
+Claude Code hold to that rule and shows what each hand-off cost and saved.
+Quality comes first: when in doubt, the rule does not downgrade.
+
+### Install
+
+One command installs Claude Code if it is missing, adds both plugins, and
+falls back to a plain skill copy when the plugin route is blocked. A failed
+mod install never blocks the rule. Safe to re-run.
 
 macOS / Linux / WSL:
 
@@ -37,23 +51,72 @@ Windows PowerShell:
 irm https://raw.githubusercontent.com/thephenyl02-creator/claude-codex-tier/main/install.ps1 | iex
 ```
 
-Already have Claude Code? Two commands:
+Already have Claude Code? Add the marketplace, then the two plugins:
 
 ```
 claude plugin marketplace add thephenyl02-creator/claude-codex-tier
 claude plugin install tier@claude-tier
+claude plugin install tier-mod@claude-tier
 ```
 
 Then, in any project, run `/tier`. The rule lands in a machine-local
 `CLAUDE.local.md`, so your repo stays clean; `/tier repo` writes the committed
-`CLAUDE.md` instead, which also covers web and mobile sessions.
+`CLAUDE.md` instead, which also covers web and mobile sessions. The mod is
+optional. It runs in the desktop app, the terminal and VS Code, and was built
+on Claude Code 2.1.308.
 
-The rule in one line: plan and judge on the session's model, execute through
-pinned sub-agents, route work by its shape, treat model as the strong lever
-and effort as the weak one, and never trade quality for cost. The
-[guide](docs/claude-tier/README.md) has the full rule, every install path
-(desktop app, cloud, git-free), troubleshooting, and the measurements behind
-each number.
+### What you see
+
+These images are rendered from the design file. The figures in them are
+illustrative, not measurements.
+
+<p align="center">
+  <img src="docs/claude-tier/images/pane.png" alt="The Tier side pane" width="420">
+</p>
+
+The side pane: savings, spend by layer, running helpers, the escalation
+ladder, the cache, blocks and the enforcement switch.
+
+![The hover strip](docs/claude-tier/images/hover-strip.png)
+
+The hover strip above the prompt: helpers today, savings, spend by layer,
+the cache ring and Keep warm.
+
+![When Tier steps in](docs/claude-tier/images/refusals.png)
+
+When Tier steps in: work sent down to a helper, a hand-off missing its model
+and effort, or max effort held back.
+
+![The footer pill](docs/claude-tier/images/footer.png)
+
+The footer pill next to the session model: helper count, savings and the
+cache ring.
+
+### How it works
+
+![How it works](docs/claude-tier/images/how-it-works.png)
+
+The main session plans, decides and judges. Readers, editors and verifiers
+do the work, each pinned to a model and an effort. Every hand-off goes into
+a ledger, and the footer, strip and pane read from it.
+
+### Measured
+
+| What | Result | n |
+| --- | --- | --- |
+| Opus 5.5 quality at every effort | no misses | 429 graded runs, 3 models x 5 efforts (2026-10-24) |
+| Sonnet/high vs Opus/low, cost per run | about 0.7x at equal quality | 3 tasks |
+| Helper boot, listed tools vs every tool | ~10K vs ~55K tokens | one machine (2026-10-24) |
+| Model switch mid-session | 20x the cost of the same turn | one turn plus a control, on Opus 5 |
+| Three days of building Tier with Tier | $95.26 saved against $140.04 main-only | 51 hand-offs (2026-10-24 to 10-26), one user, estimate |
+
+The saving is a counterfactual estimate and includes test runs. Method and
+caveats for every row are in the guide's
+[Measurements](docs/claude-tier/README.md#measurements) section.
+
+Read the [guide](docs/claude-tier/README.md) for the full rule, the Tier mod,
+every install path and troubleshooting. Release history is in the
+[changelog](docs/claude-tier/CHANGELOG.md).
 
 ## Codex Tier
 

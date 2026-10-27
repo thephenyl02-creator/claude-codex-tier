@@ -20,6 +20,14 @@
     # downloads and caches the manifest over HTTPS; update re-fetches it).
     $MarketplaceUrl = "https://raw.githubusercontent.com/$Repo/main/.claude-plugin/marketplace.json"
     $Plugin = 'tier'
+    # The Tier mod (enforcement + footer button / strip / pane), from the same
+    # marketplace. Optional: a failure here is a warning, never an install failure.
+    $ModPlugin = 'tier-mod'
+    # The mod is built against this Claude Code release (no lower bound is
+    # documented by the plugin API, so older CLIs are skipped rather than risked).
+    $ModMinClaude = [version]'2.1.308'
+    $ModState = 'skipped'
+    $PluginOk = $false
     $ZipUrl = "https://github.com/$Repo/archive/refs/heads/main.zip"
     # Marks a skills-dir copy as written by this installer, so a later
     # successful plugin install may safely replace it (and never a
@@ -73,6 +81,31 @@
         # mask a genuine install failure.
         $updateOk = Invoke-Claude $Bin @('plugin', 'update', "$Plugin@$Marketplace")
         return ($installOk -or $updateOk)
+    }
+
+    # Optional second plugin. Never throws and never touches the skill
+    # fallback; every outcome is a message. Returns 'installed', 'failed' or 'skipped'.
+    function Install-Mod([string]$Bin) {
+        $ccVer = $null
+        try {
+            $raw = (& $Bin --version 2>$null | Select-Object -First 1)
+            if ("$raw" -match '(\d+\.\d+\.\d+)') { $ccVer = [version]$Matches[1] }
+        } catch {}
+        if ($ccVer -and $ccVer -lt $ModMinClaude) {
+            Write-Warn2 "Skipping the Tier mod: it needs Claude Code $ModMinClaude or newer (you have $ccVer)."
+            Write-Warn2 "Update Claude Code, then run:  claude plugin install $ModPlugin@$Marketplace"
+            return 'skipped'
+        }
+        $ok = Invoke-Claude $Bin @('plugin', 'install', "$ModPlugin@$Marketplace")
+        if (Invoke-Claude $Bin @('plugin', 'update', "$ModPlugin@$Marketplace")) { $ok = $true }
+        if ($ok) {
+            Write-Ok "Plugin installed: $ModPlugin@$Marketplace (enforcement + footer button)"
+            return 'installed'
+        } else {
+            Write-Warn2 "Could not install the Tier mod ($ModPlugin@$Marketplace). The tier skill works without it."
+            Write-Warn2 "To add it later, run:  claude plugin install $ModPlugin@$Marketplace"
+            return 'failed'
+        }
     }
 
     # Snapshot every process-wide piece of state we touch; restored in finally.
@@ -130,6 +163,7 @@
         Write-Info 'Installing the tier plugin...'
         $fallbackCopy = Join-Path $env:USERPROFILE ".claude\skills\$Plugin"
         if (Invoke-PluginRoute $ClaudeBin) {
+            $PluginOk = $true
             Write-Ok "Plugin installed: $Plugin@$Marketplace"
             # A previous run may have used the fallback; the plugin copy
             # supersedes it. Only remove a copy carrying our marker - never
@@ -179,6 +213,7 @@
                 }
             } catch {}
             if ($alreadyInstalled) {
+                $PluginOk = $true
                 Write-Warn2 "Plugin route failed, but $Plugin@$Marketplace is already installed - keeping it and skipping the fallback copy."
             } else {
                 # ---- 4. Fallback: direct skill copy, no git involved --------
@@ -242,8 +277,27 @@
             }
         }
 
+        # ---- 5. Optional: the Tier mod --------------------------------------
+        # Only after the skill is settled, and only when the marketplace is
+        # reachable (the plugin route worked). A failure here changes nothing
+        # above.
+
+        if ($PluginOk) {
+            Write-Info 'Installing the tier-mod plugin (optional)...'
+            try { $ModState = Install-Mod $ClaudeBin } catch {
+                Write-Warn2 "Could not install the Tier mod ($ModPlugin@$Marketplace). The tier skill works without it."
+                Write-Warn2 "To add it later, run:  claude plugin install $ModPlugin@$Marketplace"
+            }
+        } else {
+            Write-Warn2 "Skipping the Tier mod (the plugin route failed). Once it works, run:  claude plugin install $ModPlugin@$Marketplace"
+        }
+
         Write-Host ''
-        Write-Ok 'Done! Restart Claude Code (or start a new session), then run:  /tier'
+        if ($ModState -eq 'installed') {
+            Write-Ok 'Done! Restart Claude Code, then run /tier in a project. The Tier button appears in the footer.'
+        } else {
+            Write-Ok 'Done! Restart Claude Code (or start a new session), then run /tier in a project.'
+        }
     } finally {
         # Leave the caller's session exactly as we found it.
         $ErrorActionPreference = $PrevEAP

@@ -2,6 +2,40 @@
 
 Each entry is an installable GitHub release of the `tier` plugin. Development between releases lives in the commit log. The rule block tag (`tier-rule vX.Y.Z`) and the release version are independent: a docs-only release does not bump the tag.
 
+- **1.12.0** - The rule and the Tier mod say the same thing.
+  The rule now states fixed limits for the main session instead of letting
+  the model judge "small": web research (including curl and docs CLIs)
+  always goes to a reader helper, inline reading stays within ~8K tokens
+  per user message (a 300+ line file only with a line range), and inline
+  edits within 2 files, shell writes included; bigger work goes to a helper
+  with a model and an effort, and the user's "do it yourself" lifts the
+  limits for that message. The "small task => skip routing" line is gone.
+  Checks move inside the hand-off: the helper runs the tests and reports
+  the command and its exit code, and pushing stays with the main session.
+  Escalation follows one ladder (haiku -> sonnet/high -> opus/low ->
+  rewrite the brief -> opus/xhigh -> opus/max, or fable/high where the plan
+  includes Fable -> stop and report); max effort and Fable unlock only
+  after an opus/xhigh failure of that `[t=]` task or when the user asks.
+  Workflow agent() calls name model, effort and agentType; hand-offs carry
+  a one-word `[t=<task>]` tag; the helpers are `tier-mod:reader` /
+  `tier-mod:editor` when the mod is installed. A local session without the
+  mod's note tells the user once that the Tier mod is not running
+  (rule-only mode); in web sessions the limits are advice. The block adds
+  the cache TTL facts (main 1h on a subscription, 5m on credits, API key or
+  cloud; sub-agents always 5m), notes the mod's keep-warm is a per-session
+  switch for a 1h cache only, off by default (on = pings until they add up
+  to one rebuild), says the mod enforces LIMITS, pins and the max/Fable
+  unlock in code (the ladder is only a note), prices Haiku at 5x above a
+  100K prompt, and makes sonnet/high the fan-out example. The rule block
+  tag moves to `tier-rule v1.12.0`, so /tier and the Tier mod both upgrade
+  an installed 1.11.1 block.
+  This release also ships the Tier mod 0.20.0 (`tier-mod@claude-tier`), its
+  first public release: a second plugin in the same marketplace that
+  enforces the limits and pins in code, keeps a ledger of every hand-off
+  (cost, check exit code, estimated savings), and shows it in a footer
+  button, a hover strip and a side pane, with an opt-in per-session
+  keep-warm. It needs Claude Code 2.1.308 or newer; the installers add it
+  after the rule and never let a mod failure block the rule.
 - **1.11.1** - The 5.5 re-measure, four stale facts, and honest prices.
   The routes are now measured on the 5.5 models: 429 graded runs, 3 models
   x 5 efforts on a tool-checked build, a silent bug hunt with decoys and a
