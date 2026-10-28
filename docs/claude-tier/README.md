@@ -106,8 +106,9 @@ plugin route is still blocked it falls back to copying the skill directly
 into `~/.claude/skills/` - no git needed at all. It changes nothing outside
 its job: your git config and shell session are left exactly as found. Safe to
 re-run any time; it updates an existing install. It then adds the Tier mod
-on Claude Code 2.1.308 or newer; if that step fails or is skipped, it prints
-the manual command and the rule install still counts as done.
+(it checks the version first, see [The Tier mod](#the-tier-mod)); if that step
+fails or is skipped, it prints the manual command and the rule install still
+counts as done.
 
 ### 2. Already have Claude Code? Two commands, plus one for the mod
 
@@ -219,6 +220,10 @@ manual fixes if you're doing it by hand.
   and retry. The repo is public - HTTPS needs no credentials. (Since 1.6.0
   the plugin itself ships as a zip over HTTPS, so git only comes into play
   when the marketplace was added in `owner/repo` form.)
+- **The mod shows as "failed to load" in the terminal** - an older terminal
+  `claude` rejects the newer manifest. Update that CLI with `claude update`;
+  the desktop app is unaffected if it is 2.1.308 or newer. Check with
+  `claude --version`.
 - **`This plugin uses a source type your Claude Code version does not
   support`** - zip-archive plugins need Claude Code v2.1.224+. Update Claude
   Code (`claude update`) and retry.
@@ -227,9 +232,8 @@ manual fixes if you're doing it by hand.
 
 The rule asks the model to route well. The mod checks that it did. It is a
 separate plugin, `tier-mod@claude-tier`, built on the Claude Code mod API,
-which is early access and may change between releases. It was built and
-tested on Claude Code 2.1.308. The installers skip it on older versions and
-print the manual command instead.
+which is early access and may change between releases. The mod needs Claude Code 2.1.308 or newer. The installers check this; a manual plugin install does not. The
+installers skip it on older versions and print the manual command instead.
 
 ### What it enforces
 
@@ -284,7 +288,8 @@ list-price equivalent, not money back.
 
 ### Settings
 
-Set these in the plugin's `userConfig` (the plugin settings in Claude Code):
+Set these in the plugin's `userConfig` (the plugin settings in Claude Code).
+Claude Code may print '5 userConfig options not yet set' after install. Ignore it: every setting has a default and the mod works unconfigured. To change one, run /plugin configure tier-mod@claude-tier.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
@@ -306,7 +311,8 @@ Set these in the plugin's `userConfig` (the plugin settings in Claude Code):
 ### When it breaks
 
 The mod writes its health to `~/.claude/tier-mod-status.json`: which parts
-loaded, and any errors, per session. If a part fails to load, the footer
+loaded, and any errors, per session. The ledger lives in Claude Code's plugin
+store under `~/.claude/plugins`, not in that file. If a part fails to load, the footer
 shows a red chip and a notice once per part. A broken part fails open:
 your session carries on without it. Attach that file to a
 [bug report](https://github.com/thephenyl02-creator/claude-codex-tier/issues/new?template=bug_report.yml).

@@ -166,13 +166,16 @@ version_ge() {
 }
 
 # Optional second plugin. Never exits, never touches the skill fallback; every
-# outcome is a message. Sets MOD_STATE=installed|skipped|failed.
+# outcome is a message. Sets MOD_STATE=installed|skipped|old|failed
+# (old = the terminal claude failed the version gate).
 MOD_STATE="skipped"
 install_mod() {
   CC_VER="$("$CLAUDE_BIN" --version </dev/null 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
   if [ -n "$CC_VER" ] && ! version_ge "$CC_VER" "$MOD_MIN_CLAUDE"; then
-    warn "Skipping the Tier mod: it needs Claude Code $MOD_MIN_CLAUDE or newer (you have $CC_VER)."
-    warn "Update Claude Code, then run:  claude plugin install $MOD_PLUGIN@$MARKETPLACE"
+    MOD_STATE="old"
+    warn "Skipping the Tier mod: the terminal 'claude' on your PATH is version $CC_VER, and the mod needs $MOD_MIN_CLAUDE or newer."
+    warn "Update it with:  claude update  (or reinstall), then run:  claude plugin install $MOD_PLUGIN@$MARKETPLACE"
+    warn "If you use the desktop app, you can add the mod from the app's plugin menu instead."
     return 0
   fi
   M_OK=0
@@ -288,6 +291,8 @@ fi
 printf '\n'
 if [ "$MOD_STATE" = "installed" ]; then
   ok "Done! Restart Claude Code, then run /tier in a project. The Tier button appears in the footer."
+elif [ "$MOD_STATE" = "old" ] || [ "$MOD_STATE" = "skipped" ]; then
+  ok "Done! The Tier mod was skipped (see above). Restart Claude Code (or start a new session), then run /tier in a project."
 else
   ok "Done! Restart Claude Code (or start a new session), then run /tier in a project."
 fi

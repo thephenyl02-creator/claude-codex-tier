@@ -84,7 +84,7 @@
     }
 
     # Optional second plugin. Never throws and never touches the skill
-    # fallback; every outcome is a message. Returns 'installed', 'failed' or 'skipped'.
+    # fallback; every outcome is a message. Returns 'installed', 'failed' or 'old' (the terminal claude failed the version gate).
     function Install-Mod([string]$Bin) {
         $ccVer = $null
         try {
@@ -92,9 +92,10 @@
             if ("$raw" -match '(\d+\.\d+\.\d+)') { $ccVer = [version]$Matches[1] }
         } catch {}
         if ($ccVer -and $ccVer -lt $ModMinClaude) {
-            Write-Warn2 "Skipping the Tier mod: it needs Claude Code $ModMinClaude or newer (you have $ccVer)."
-            Write-Warn2 "Update Claude Code, then run:  claude plugin install $ModPlugin@$Marketplace"
-            return 'skipped'
+            Write-Warn2 "Skipping the Tier mod: the terminal 'claude' on your PATH is version $ccVer, and the mod needs $ModMinClaude or newer."
+            Write-Warn2 "Update it with:  claude update  (or reinstall), then run:  claude plugin install $ModPlugin@$Marketplace"
+            Write-Warn2 "If you use the desktop app, you can add the mod from the app's plugin menu instead."
+            return 'old'
         }
         $ok = Invoke-Claude $Bin @('plugin', 'install', "$ModPlugin@$Marketplace")
         if (Invoke-Claude $Bin @('plugin', 'update', "$ModPlugin@$Marketplace")) { $ok = $true }
@@ -295,6 +296,8 @@
         Write-Host ''
         if ($ModState -eq 'installed') {
             Write-Ok 'Done! Restart Claude Code, then run /tier in a project. The Tier button appears in the footer.'
+        } elseif ($ModState -eq 'old' -or $ModState -eq 'skipped') {
+            Write-Ok 'Done! The Tier mod was skipped (see above). Restart Claude Code (or start a new session), then run /tier in a project.'
         } else {
             Write-Ok 'Done! Restart Claude Code (or start a new session), then run /tier in a project.'
         }

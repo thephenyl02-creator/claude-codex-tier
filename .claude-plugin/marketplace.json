@@ -4,7 +4,7 @@
     "name": "Fenil K Ventures LLC"
   },
   "metadata": {
-    "description": "Model/effort tiering for Claude Code - /tier makes any project quality-first and cost-efficient with one durable rule, no hooks or moving parts.",
+    "description": "One durable model/effort-tiering rule (tier), plus an optional mod that enforces it and shows cost and savings (tier-mod).",
     "version": "1.12.0"
   },
   "plugins": [
@@ -12,6 +12,15 @@
       "name": "tier",
       "description": "Install a model/effort-tiering working preference into the current project - quality-first, cost-efficient. /tier writes a machine-local CLAUDE.local.md by default (your repo stays clean); /tier repo writes the committed CLAUDE.md for web + mobile coverage.",
       "version": "1.12.0",
+      "homepage": "https://github.com/thephenyl02-creator/claude-codex-tier",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "model-routing",
+        "cost",
+        "sub-agents",
+        "tiering"
+      ],
       "source": {
         "source": "archive",
         "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.12.0/tier-plugin-1.12.0.zip",
@@ -22,6 +31,15 @@
       "name": "tier-mod",
       "description": "Tier: the main session manages, helpers do the work. Every hand-off names a model and an effort (max/Fable only after an opus/xhigh failure of that task); web work, big reads and multi-file edits go to tier-mod:reader / tier-mod:editor; a ledger records what each hand-off cost, its check's exit code, and what it saved.",
       "version": "0.20.0",
+      "homepage": "https://github.com/thephenyl02-creator/claude-codex-tier",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "mod",
+        "enforcement",
+        "cost-tracking",
+        "sub-agents"
+      ],
       "source": {
         "source": "archive",
         "url": "https://github.com/thephenyl02-creator/claude-codex-tier/releases/download/v1.12.0/tier-mod-0.20.0.zip",

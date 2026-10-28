@@ -65,6 +65,21 @@ Then, in any project, run `/tier`. The rule lands in a machine-local
 optional. It runs in the desktop app, the terminal and VS Code, and was built
 on Claude Code 2.1.308.
 
+### Requirements, removal, privacy
+
+The rule works in any Claude Code. The mod needs Claude Code 2.1.308 or newer
+in every Claude Code you use: the desktop app and the terminal `claude`, which
+can be older than the app (check with `claude --version`).
+
+To remove it, run `claude plugin uninstall tier-mod@claude-tier` and
+`claude plugin uninstall tier@claude-tier`, then delete the
+`<!-- tier-rule ... -->` block from `CLAUDE.local.md` / `CLAUDE.md`.
+
+What the mod writes: the ledger and its switches live in Claude Code's plugin
+store under `~/.claude/plugins`, plus a status file at
+`~/.claude/tier-mod-status.json`. What it sends: nothing leaves your machine
+except keep-warm pings, which are ordinary model requests on your own account.
+
 ### What you see
 
 These images are rendered from the design file. The figures in them are
@@ -104,7 +119,8 @@ a ledger, and the footer, strip and pane read from it.
 
 | What | Result | n |
 | --- | --- | --- |
-| Opus 5.5 quality at every effort | no misses | 429 graded runs, 3 models x 5 efforts (2026-10-24) |
+| Opus 5.5 quality at every effort | no misses | part of 429 graded runs (3 models x 5 efforts, 3 tasks, at least 5 runs per setting, 2026-10-24) |
+| Sonnet 5.5 on a silent bug hunt | one miss each at low and medium, clean from high | same runs |
 | Sonnet/high vs Opus/low, cost per run | about 0.7x at equal quality | 3 tasks |
 | Helper boot, listed tools vs every tool | ~10K vs ~55K tokens | one machine (2026-10-24) |
 | Model switch mid-session | 20x the cost of the same turn | one turn plus a control, on Opus 5 |

@@ -12,8 +12,7 @@ claude plugin install tier-mod@claude-tier
 ```
 
 Runs in the desktop app, the terminal and VS Code. The mod is built on the Claude Code mod API, which
-is early access and may change between releases. It was built and tested on Claude Code 2.1.308; the
-manifest has no minimum-version field, so use that version or newer.
+is early access and may change between releases. The mod needs Claude Code 2.1.308 or newer. The installers check this; a manual plugin install does not.
 
 ## What it does
 
@@ -29,11 +28,11 @@ manifest has no minimum-version field, so use that version or newer.
 
 ## Settings
 
-`userConfig` in `.claude-plugin/plugin.json`:
+`userConfig` in `.claude-plugin/plugin.json`. Claude Code may print '5 userConfig options not yet set' after install. Ignore it: every setting has a default and the mod works unconfigured. To change one, run /plugin configure tier-mod@claude-tier.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `enforce` | `true` | On refuses what the limits catch; off only records. |
+| `enforce` | `true` | `true` blocks calls over the limits; `false` only logs them. |
 | `readTokens` | `8000` | Inline reading allowance per user message. |
 | `readLines` | `300` | Files this long or longer need a line range. |
 | `editFiles` | `2` | Inline edited files per user message. |
